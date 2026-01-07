@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/ethusdt.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/api/ethusdt", "dest": "api/ethusdt.py" }
+  ]
+}
