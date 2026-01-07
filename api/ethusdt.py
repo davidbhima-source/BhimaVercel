@@ -1,41 +1,43 @@
+from http.server import BaseHTTPRequestHandler
 import json
 import requests
 
-def handler(request):
-    # Parámetros básicos
-    symbol = "ETHUSDT"
-    interval = "1h"
-    limit = 1000  # puedes ajustar a 500, 1000, etc.
+class handler(BaseHTTPRequestHandler):
 
-    # Endpoint oficial de Binance
-    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
+    def do_GET(self):
+        try:
+            # Parámetros
+            symbol = "ETHUSDT"
+            interval = "1h"
+            limit = 500
 
-    try:
-        response = requests.get(url, timeout=10)
-        data = response.json()
+            url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
+            r = requests.get(url, timeout=10)
+            data = r.json()
 
-        # Transformamos el formato
-        candles = [
-            {
-                "open_time": c[0],
-                "open": float(c[1]),
-                "high": float(c[2]),
-                "low": float(c[3]),
-                "close": float(c[4]),
-                "volume": float(c[5]),
-                "close_time": c[6],
-            }
-            for c in data
-        ]
+            candles = [
+                {
+                    "open_time": c[0],
+                    "open": float(c[1]),
+                    "high": float(c[2]),
+                    "low": float(c[3]),
+                    "close": float(c[4]),
+                    "volume": float(c[5]),
+                    "close_time": c[6],
+                }
+                for c in data
+            ]
 
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps(candles)
-        }
+            response = json.dumps(candles)
 
-    except Exception as e:
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": str(e)})
-        }
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(response.encode())
+
+        except Exception as e:
+            self.send_response(500)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            error = {"error": str(e)}
+            self.wfile.write(json.dumps(error).encode())
