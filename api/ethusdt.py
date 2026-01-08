@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 import requests
 from urllib.parse import urlparse, parse_qs
+import time
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -37,16 +38,32 @@ class handler(BaseHTTPRequestHandler):
                 for c in data
             ]
 
-            response = json.dumps(candles)
+            payload = {
+                "symbol": symbol,
+                "interval": interval,
+                "limit": limit,
+                "fetchedAt": int(time.time() * 1000),
+                "candles": candles
+            }
+
+            response = json.dumps(payload)
+
+            # ✅ Enviar respuesta con headers anti-caché
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(response.encode())
 
         except Exception as e:
+            # Manejo de errores
             self.send_response(500)
             self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             error = {"error": str(e)}
             self.wfile.write(json.dumps(error).encode())
-
